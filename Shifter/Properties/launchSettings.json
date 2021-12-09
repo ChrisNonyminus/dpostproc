@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "Shifter": {
+      "commandName": "Project",
+      "workingDirectory": "C:\\sourcecode\\decomp"
+    }
+  }
+}

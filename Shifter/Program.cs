@@ -58,13 +58,13 @@ namespace Shifter
 					string rawLine = file.lines[i];
 					string line = rawLine.Trim();
 
-					if (line.StartsWith("#") || !line.Contains(".4byte"))
+					if (line.StartsWith("#"))
 					{
 						continue;
 					}
 
 					string[] tokens = line.Split(' ');
-					if (tokens.Length != 2 || !tokens[1].StartsWith("0x80"))
+					if (!line.StartsWith("/* ") || !tokens[1].StartsWith("80"))
 					{
 						continue;
 					}
@@ -75,52 +75,19 @@ namespace Shifter
 						continue;
 					}
 
-					string offset_str = offset.ToString("X");
-					foreach (FILE f in secondaryFs.files)
+					string offset_str = tokens[1];
+
+					// If the label already exists, we can just reference it
+					if (file.lines[i - 1].StartsWith("lbl_"))
 					{
-						for (int j = 0; j < f.lines.Count; j++)
+						// Make sure it's global, and if it's not, make it
+						if (!file.lines[i - 2].Contains(".global"))
 						{
-							string l = f.lines[j];
-							if (!l.StartsWith("/* " + offset_str))
-							{
-								continue;
-							}
+							file.lines.Insert(i - 1, $".global lbl_{offset_str}");
 
-							// If the label already exists, we can just reference it
-							if (f.lines[j - 1].StartsWith("lbl_"))
-							{
-								// Make sure it's global, and if it's not, make it
-								if (!f.lines[j - 2].Contains(".global"))
-								{
-									f.lines.Insert(j - 1, $".global lbl_{offset_str}");
-									j += 1;
-
-									f.edited = true;
-								}
-
-								tokens[1] = $"lbl_{offset_str}";
-								file.lines[i] = "\t" + string.Join(" ", tokens);
-								file.edited = true;
-							}
-							else
-							{
-								string label = $"lbl_{offset_str}";
-								if (f.lines[j - 1].Contains(":"))
-								{
-									label = f.lines[j - 1].Replace(":", "");
-								}
-								else
-								{
-									f.lines.Insert(j, label + ":");
-								}
-
-								tokens[1] = label;
-								file.lines[i] = "\t" + string.Join(" ", tokens);
-								file.edited = true;
-							}
+							file.edited = true;
 						}
 					}
-					secondaryFs.WriteEdits();
 				}
 
 				Console.WriteLine(file.name);
